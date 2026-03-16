@@ -1,10 +1,9 @@
-from transformers import MarianMTModel, MarianTokenizer
+from transformers import M2M100ForConditionalGeneration, M2M100Tokenizer
 
+model_name = "facebook/m2m100_418M"
 
-model_name = "Helsinki-NLP/opus-mt-hi-en"
-
-tokenizer = MarianTokenizer.from_pretrained(model_name)
-model = MarianMTModel.from_pretrained(model_name)
+tokenizer = M2M100Tokenizer.from_pretrained(model_name)
+model = M2M100ForConditionalGeneration.from_pretrained(model_name)
 
 
 def translate_text(text, source_lang, target_lang="en"):
@@ -12,10 +11,15 @@ def translate_text(text, source_lang, target_lang="en"):
     if source_lang == target_lang:
         return text
 
-    inputs = tokenizer(text, return_tensors="pt", padding=True)
+    tokenizer.src_lang = source_lang
 
-    translated = model.generate(**inputs)
+    encoded = tokenizer(text, return_tensors="pt")
 
-    output = tokenizer.decode(translated[0], skip_special_tokens=True)
+    generated_tokens = model.generate(
+        **encoded,
+        forced_bos_token_id=tokenizer.get_lang_id(target_lang)
+    )
 
-    return output
+    translated = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
+
+    return translated

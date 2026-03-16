@@ -1,0 +1,13 @@
+# Router configuration for model selection
+
+language_detection:
+  default: fasttext
+  fallback: langdetect
+
+translation:
+  default: marianmt
+  fallback: googletrans
+
+classification:
+  default: xlm_roberta
+  fallback: simple_model

@@ -6,29 +6,36 @@ from preprocessing.text_preprocess import preprocess_text
 
 def run_pipeline(text, target_lang="en"):
 
-    print("\n--- Multilingual NLP Pipeline ---\n")
-
-    # Step 1: Detect language
+    # Step 1 — Language Detection
     language, confidence = detect_language(text)
-    print("Detected Language:", language)
-    print("Confidence:", confidence)
 
-    # Step 2: Translate
+    # Step 2 — Translation
     translated_text = translate_text(text, language, target_lang)
-    print("Translated Text:", translated_text)
 
-    # Step 3: Preprocess
+    # Step 3 — Preprocessing
     clean_text = preprocess_text(translated_text)
 
-    # Step 4: Classification
+    # Step 4 — Classification
     label, score = classify_text(clean_text)
 
-    print("Predicted Label:", label)
-    print("Confidence:", score)
+    results = {
+        "original_text": text,
+        "language": language,
+        "translation": translated_text,
+        "prediction": label,
+        "confidence": score
+    }
+
+    return results
 
 
 if __name__ == "__main__":
 
     sample_text = "यह बहुत अच्छा है"
 
-    run_pipeline(sample_text)
+    result = run_pipeline(sample_text)
+
+    print("\n--- Multilingual NLP Pipeline ---\n")
+
+    for key, value in result.items():
+        print(f"{key}: {value}")

@@ -1,0 +1,7 @@
+text,label
+"This movie is amazing",positive
+"This is terrible",negative
+"यह बहुत अच्छा है",positive
+"यह बहुत खराब है",negative
+"C est incroyable",positive
+"Esto es horrible",negative

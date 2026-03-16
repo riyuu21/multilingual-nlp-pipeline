@@ -1,0 +1,7 @@
+text,language,translated_text,prediction,confidence
+This movie is amazing,en,This movie is amazing,positive,0.9051193594932556
+This is terrible,en,This is terrible,negative,0.9595650434494019
+यह बहुत अच्छा है,hi,That's great.,positive,0.853385865688324
+यह बहुत खराब है,hi,It's too bad.,negative,0.9344258308410645
+C est incroyable,fr,C,neutral,0.36807146668434143
+Esto es horrible,es,Esto Huorbly,negative,0.39557144045829773

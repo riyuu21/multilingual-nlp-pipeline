@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# ML models
+models/
+*.bin
+*.pt
+*.model
+
+# datasets
+data/raw/
+data/processed/
+
+# HuggingFace cache
+.cache/

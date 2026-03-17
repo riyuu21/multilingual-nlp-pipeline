@@ -15,3 +15,14 @@ data/processed/
 
 # HuggingFace cache
 .cache/
+
+# Node
+node_modules/
+dist/
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db

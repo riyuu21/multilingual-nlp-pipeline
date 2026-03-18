@@ -1,0 +1,9 @@
+{
+  "name": "multilingual-nlp-pipeline",
+  "version": "1.0.0",
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "backend": "venv\\Scripts\\python -m uvicorn api.main:app --reload",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\""
+  }
+}

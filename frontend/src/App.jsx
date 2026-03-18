@@ -1,63 +1,52 @@
 import { useState } from "react";
+import { analyzeText } from "./api/analyze";
+import LanguageSelector from "./components/LanguageSelector";
+import TextInput from "./components/TextInput";
+import ResultCards from "./components/ResultCards";
+import "./App.css";
 
 function App() {
-  const [text, setText] = useState("");
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(false);
+    const [text, setText] = useState("");
+    const [sourceLang, setSourceLang] = useState("");
+    const [targetLang, setTargetLang] = useState("en");
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
 
-  const analyzeText = async () => {
-    if (!text.trim()) return;
+    const handleAnalyze = async () => {
+        if (!text.trim()) return;
+        setLoading(true);
+        setResult(null);
+        try {
+            const data = await analyzeText(text, sourceLang, targetLang);
+            setResult(data);
+        } catch (error) {
+            if (error.response) {
+                setResult({ error: JSON.stringify(error.response.data) });
+            } else {
+                setResult({ error: error.message });
+            }
+        }
+        setLoading(false);
+    };
 
-    setLoading(true);
-
-    try {
-      const response = await fetch("http://127.0.0.1:8000/analyze", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
-      });
-
-      const data = await response.json();
-      setResult(data);
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to backend");
-    }
-
-    setLoading(false);
-  };
-
-  return (
-    <div style={{ padding: "40px", fontFamily: "Arial" }}>
-      <h1>🌍 Multilingual NLP App</h1>
-
-      <textarea
-        rows="5"
-        cols="50"
-        placeholder="Enter text..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
-
-      <br /><br />
-
-      <button onClick={analyzeText}>
-        {loading ? "Analyzing..." : "Analyze"}
-      </button>
-
-      {result && (
-        <div style={{ marginTop: "20px" }}>
-          <h3>Results:</h3>
-          <p><b>Language:</b> {result.language}</p>
-          <p><b>Translation:</b> {result.translation}</p>
-          <p><b>Prediction:</b> {result.prediction}</p>
-          <p><b>Confidence:</b> {result.confidence.toFixed(3)}</p>
+    return (
+        <div className="container">
+            <h1>Multilingual NLP Analyzer</h1>
+            <LanguageSelector
+                sourceLang={sourceLang}
+                targetLang={targetLang}
+                setSourceLang={setSourceLang}
+                setTargetLang={setTargetLang}
+            />
+            <TextInput
+                text={text}
+                setText={setText}
+                onAnalyze={handleAnalyze}
+                loading={loading}
+            />
+            <ResultCards result={result} />
         </div>
-      )}
-    </div>
-  );
+    );
 }
 
 export default App;

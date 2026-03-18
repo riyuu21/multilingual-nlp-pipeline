@@ -1,5 +1,3 @@
-# Router configuration for model selection
-
 language_detection:
   default: fasttext
   fallback: langdetect

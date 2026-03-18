@@ -1,7 +1,17 @@
+import logging
 from fastapi import FastAPI
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from pipeline.main_pipeline import run_pipeline
+from pydantic import BaseModel
+
+from routers.language_router import detect_language
+from routers.translation_router import translate_text
+from routers.model_router import classify_text
+from preprocessing.text_preprocess import preprocess_text
+from preprocessing.hinglish_converter import hinglish_to_english
+from adaptive_learning.feedback_store import save_feedback
+from adaptive_learning.local_learning import feedback_summary
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 app = FastAPI()
 
@@ -13,21 +23,77 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Request format
 class TextRequest(BaseModel):
     text: str
+    source_lang: str = None
+    target_lang: str = "en"
 
+class FeedbackRequest(BaseModel):
+    text: str
+    prediction: str
+    feedback: str
 
-# Root route (for testing)
 @app.get("/")
 def home():
     return {"message": "NLP API is running"}
 
-
-# Main API route
 @app.post("/analyze")
 def analyze_text(request: TextRequest):
+    try:
+        text = request.text.strip()
 
-    result = run_pipeline(request.text)
+        if not text:
+            return {"error": "Empty input"}
 
-    return result
+        logging.info(f"Input: {text}")
+
+        if request.source_lang == "hinglish":
+            translated = hinglish_to_english(text)
+            clean_text = preprocess_text(translated)
+            label, score = classify_text(clean_text)
+            return {
+                "language": "hinglish",
+                "language_confidence": 1.0,
+                "translated_text": translated,
+                "prediction": label,
+                "confidence": score
+            }
+
+        if request.source_lang:
+            language = request.source_lang
+            confidence = 1.0
+        else:
+            language, confidence = detect_language(text)
+
+        translated = translate_text(text, language, request.target_lang)
+        clean_text = preprocess_text(translated)
+        label, score = classify_text(clean_text)
+
+        return {
+            "language": language,
+            "language_confidence": confidence,
+            "translated_text": translated,
+            "prediction": label,
+            "confidence": score
+        }
+
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        return {"error": str(e)}
+
+@app.post("/feedback")
+def submit_feedback(request: FeedbackRequest):
+    try:
+        if request.feedback not in ["positive", "negative"]:
+            return {"error": "Invalid feedback type"}
+
+        save_feedback(request.text, request.prediction, request.feedback)
+        return {"message": "Feedback saved"}
+
+    except Exception as e:
+        logging.error(f"Feedback error: {str(e)}")
+        return {"error": str(e)}
+
+@app.get("/feedback-summary")
+def get_feedback_summary():
+    return feedback_summary()

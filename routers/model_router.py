@@ -1,5 +1,6 @@
 from transformers import pipeline
 from configs.config_loader import load_config
+from adaptive_learning.local_learning import get_user_corrections
 
 classifier = None
 
@@ -19,7 +20,18 @@ def load_classifier():
 
     return classifier
 
-def classify_text(text):
+def classify_text(text, user_id=None):
     model = load_classifier()
     result = model(text)[0]
-    return result["label"], float(result["score"])
+    label = result["label"]
+    score = float(result["score"])
+
+    if user_id:
+        corrections = get_user_corrections(user_id, "sentiment")
+        for corrected_text, wrong_prediction in corrections:
+            if corrected_text.strip().lower() == text.strip().lower():
+                if label == wrong_prediction:
+                    label = "POSITIVE" if label == "NEGATIVE" else "NEGATIVE"
+                    score = 0.70
+
+    return label, score

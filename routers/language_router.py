@@ -1,5 +1,6 @@
 from configs.config_loader import load_config
 from langdetect import detect
+from adaptive_learning.local_learning import get_user_corrections
 import fasttext
 
 FASTTEXT_MODEL_PATH = "models/detection/lid.176.bin"
@@ -12,7 +13,7 @@ def load_fasttext():
         fasttext_model = fasttext.load_model(FASTTEXT_MODEL_PATH)
     return fasttext_model
 
-def detect_language(text):
+def detect_language(text, user_id=None):
     config = load_config()
     model_type = config["language_detection"]["default"]
 
@@ -33,5 +34,13 @@ def detect_language(text):
     except Exception:
         lang = detect(text)
         confidence = 0.80
+
+    if user_id:
+        corrections = get_user_corrections(user_id, "language")
+        for corrected_text, wrong_prediction in corrections:
+            if corrected_text.strip().lower() == text.strip().lower():
+                if lang == wrong_prediction:
+                    lang = detect(text)
+                    confidence = 0.70
 
     return lang, confidence

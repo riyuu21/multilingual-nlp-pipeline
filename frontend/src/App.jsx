@@ -3,9 +3,11 @@ import { analyzeText } from "./api/analyze";
 import LanguageSelector from "./components/LanguageSelector";
 import TextInput from "./components/TextInput";
 import ResultCards from "./components/ResultCards";
+import Login from "./components/Login";
 import "./App.css";
 
 function App() {
+    const [user, setUser] = useState(null);
     const [text, setText] = useState("");
     const [sourceLang, setSourceLang] = useState("");
     const [targetLang, setTargetLang] = useState("en");
@@ -17,7 +19,7 @@ function App() {
         setLoading(true);
         setResult(null);
         try {
-            const data = await analyzeText(text, sourceLang, targetLang);
+            const data = await analyzeText(text, sourceLang, targetLang, user?.id);
             setResult(data);
         } catch (error) {
             if (error.response) {
@@ -29,9 +31,21 @@ function App() {
         setLoading(false);
     };
 
+    if (!user) {
+        return <Login onLogin={setUser} />
+    }
+
     return (
         <div className="container">
-            <h1>Multilingual NLP Analyzer</h1>
+            <div className="header">
+                <h1>Multilingual NLP Analyzer</h1>
+                <div className="user-info">
+                    <img src={user.picture} alt={user.name} />
+                    <span>{user.name}</span>
+                    <button className="logout-btn" onClick={() => setUser(null)}>Logout</button>
+                </div>
+            </div>
+
             <LanguageSelector
                 sourceLang={sourceLang}
                 targetLang={targetLang}
@@ -44,7 +58,7 @@ function App() {
                 onAnalyze={handleAnalyze}
                 loading={loading}
             />
-            <ResultCards result={result} />
+            <ResultCards result={result} userId={user?.id} />
         </div>
     );
 }

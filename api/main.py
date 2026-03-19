@@ -27,11 +27,14 @@ class TextRequest(BaseModel):
     text: str
     source_lang: str = None
     target_lang: str = "en"
+    user_id: str = None
 
 class FeedbackRequest(BaseModel):
     text: str
     prediction: str
     feedback: str
+    feedback_type: str = "sentiment"
+    user_id: str = None
 
 @app.get("/")
 def home():
@@ -45,12 +48,12 @@ def analyze_text(request: TextRequest):
         if not text:
             return {"error": "Empty input"}
 
-        logging.info(f"Input: {text}")
+        logging.info(f"Input: {text} | User: {request.user_id}")
 
         if request.source_lang == "hinglish":
             translated = hinglish_to_english(text)
             clean_text = preprocess_text(translated)
-            label, score = classify_text(clean_text)
+            label, score = classify_text(clean_text, request.user_id)
             return {
                 "language": "hinglish",
                 "language_confidence": 1.0,
@@ -63,11 +66,11 @@ def analyze_text(request: TextRequest):
             language = request.source_lang
             confidence = 1.0
         else:
-            language, confidence = detect_language(text)
+            language, confidence = detect_language(text, request.user_id)
 
         translated = translate_text(text, language, request.target_lang)
         clean_text = preprocess_text(translated)
-        label, score = classify_text(clean_text)
+        label, score = classify_text(clean_text, request.user_id)
 
         return {
             "language": language,
@@ -87,7 +90,10 @@ def submit_feedback(request: FeedbackRequest):
         if request.feedback not in ["positive", "negative"]:
             return {"error": "Invalid feedback type"}
 
-        save_feedback(request.text, request.prediction, request.feedback)
+        if request.feedback_type not in ["sentiment", "language"]:
+            return {"error": "Invalid feedback type"}
+
+        save_feedback(request.user_id, request.text, request.prediction, request.feedback, request.feedback_type)
         return {"message": "Feedback saved"}
 
     except Exception as e:
@@ -95,5 +101,5 @@ def submit_feedback(request: FeedbackRequest):
         return {"error": str(e)}
 
 @app.get("/feedback-summary")
-def get_feedback_summary():
-    return feedback_summary()
+def get_feedback_summary(user_id: str = None):
+    return feedback_summary(user_id)

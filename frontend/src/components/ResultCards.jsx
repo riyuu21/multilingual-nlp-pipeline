@@ -29,6 +29,31 @@ const SENTIMENT_STYLES = {
     NEUTRAL: { background: "rgba(201, 150, 42, 0.15)", color: "#c9962a" },
 };
 
+function CopyButton({ text }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <button className="copy-btn" onClick={handleCopy}>
+            {copied ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
+            ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
+            )}
+            {copied ? "Copied!" : "Copy"}
+        </button>
+    );
+}
+
 function FeedbackButtons({ onPositive, onNegative, feedback }) {
     return (
         <div className="feedback-row">
@@ -55,6 +80,7 @@ function FeedbackButtons({ onPositive, onNegative, feedback }) {
 function ResultCards({ result, userId }) {
     const [sentimentFeedback, setSentimentFeedback] = useState(null);
     const [languageFeedback, setLanguageFeedback] = useState(null);
+    const [visible, setVisible] = useState(false);
 
     if (!result) return null;
 
@@ -81,7 +107,7 @@ function ResultCards({ result, userId }) {
     const sentimentStyle = SENTIMENT_STYLES[sentimentKey] || { background: "#ccc", color: "#fff" };
 
     return (
-        <div className="results-grid">
+        <div className="results-grid animate-in">
             <div className="card">
                 <div className="card-label">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -106,6 +132,7 @@ function ResultCards({ result, userId }) {
                     <span>Translation</span>
                 </div>
                 <p className="card-value">{result.translated_text}</p>
+                <CopyButton text={result.translated_text} />
                 <FeedbackButtons
                     feedback={null}
                     onPositive={() => {}}

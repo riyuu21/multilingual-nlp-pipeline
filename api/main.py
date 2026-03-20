@@ -1,6 +1,9 @@
 import logging
-from fastapi import FastAPI
+import time
+from collections import defaultdict
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from routers.language_router import detect_language
@@ -22,6 +25,35 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# cache — stores results so same text isn't analyzed twice
+result_cache = {}
+CACHE_MAX_SIZE = 500
+
+# rate limiter — tracks requests per user
+rate_limit_store = defaultdict(list)
+RATE_LIMIT = 20
+RATE_WINDOW = 60
+
+def is_rate_limited(user_id: str) -> bool:
+    now = time.time()
+    key = user_id or "anonymous"
+    requests = rate_limit_store[key]
+    requests = [t for t in requests if now - t < RATE_WINDOW]
+    rate_limit_store[key] = requests
+    if len(requests) >= RATE_LIMIT:
+        return True
+    rate_limit_store[key].append(now)
+    return False
+
+def get_cache_key(text, source_lang, target_lang):
+    return f"{text}|{source_lang}|{target_lang}"
+
+def add_to_cache(key, value):
+    if len(result_cache) >= CACHE_MAX_SIZE:
+        oldest = next(iter(result_cache))
+        del result_cache[oldest]
+    result_cache[key] = value
 
 class TextRequest(BaseModel):
     text: str
@@ -48,19 +80,32 @@ def analyze_text(request: TextRequest):
         if not text:
             return {"error": "Empty input"}
 
+        if is_rate_limited(request.user_id):
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Too many requests, please slow down"}
+            )
+
         logging.info(f"Input: {text} | User: {request.user_id}")
+
+        cache_key = get_cache_key(text, request.source_lang, request.target_lang)
+        if cache_key in result_cache:
+            logging.info("Returning cached result")
+            return result_cache[cache_key]
 
         if request.source_lang == "hinglish":
             translated = hinglish_to_english(text)
             clean_text = preprocess_text(translated)
             label, score = classify_text(clean_text, request.user_id)
-            return {
+            result = {
                 "language": "hinglish",
                 "language_confidence": 1.0,
                 "translated_text": translated,
                 "prediction": label,
                 "confidence": score
             }
+            add_to_cache(cache_key, result)
+            return result
 
         if request.source_lang:
             language = request.source_lang
@@ -72,13 +117,15 @@ def analyze_text(request: TextRequest):
         clean_text = preprocess_text(translated)
         label, score = classify_text(clean_text, request.user_id)
 
-        return {
+        result = {
             "language": language,
             "language_confidence": confidence,
             "translated_text": translated,
             "prediction": label,
             "confidence": score
         }
+        add_to_cache(cache_key, result)
+        return result
 
     except Exception as e:
         logging.error(f"Error: {str(e)}")

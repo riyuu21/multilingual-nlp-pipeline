@@ -24,19 +24,26 @@ function SearchableSelect({ value, onChange, options, placeholder }) {
 
     return (
         <div className="searchable-select" ref={ref}>
-            <div className="select-trigger" onClick={() => setOpen(!open)}>
-                {selected ? selected.label : placeholder}
-                <span className="arrow">{open ? "▲" : "▼"}</span>
-            </div>
+            <button className="select-trigger" onClick={() => setOpen(!open)}>
+                <span>{selected ? selected.label : placeholder}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </button>
 
             {open && (
                 <div className="select-dropdown">
-                    <input
-                        autoFocus
-                        placeholder="Search language..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
+                    <div className="search-row">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                        <input
+                            autoFocus
+                            placeholder="Search languages..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                     <ul>
                         {filtered.map(l => (
                             <li

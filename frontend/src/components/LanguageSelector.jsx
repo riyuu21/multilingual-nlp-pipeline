@@ -81,12 +81,14 @@ function LanguageSelector({ sourceLang, targetLang, setSourceLang, setTargetLang
                 options={SOURCE_LANGUAGES}
                 placeholder="Auto Detect"
             />
-            <span>→</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted-text)", flexShrink: 0 }}>
+                <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+            </svg>
             <SearchableSelect
                 value={targetLang}
                 onChange={setTargetLang}
                 options={TARGET_LANGUAGES}
-                placeholder="Select language"
+                placeholder="Target Language"
             />
         </div>
     );

@@ -1,2 +1,4 @@
 timestamp,user_id,text,prediction,feedback,feedback_type
 2026-03-19 20:18:12.563534,104424286249589971543,Bonne nuit,positive,positive,sentiment
+2026-03-20 21:32:12.184194,104424286249589971543,how are you?,hinglish,positive,language
+2026-03-20 21:32:16.428178,104424286249589971543,how are you?,neutral,positive,sentiment

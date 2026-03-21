@@ -153,7 +153,7 @@ def submit_feedback(request: FeedbackRequest):
 def get_feedback_summary(user_id: str = None):
     return feedback_summary(user_id)
 @app.get("/history")
-def get_history(user_id: str = None):
+def get_history(user_id: str = None, filter_by: str = None, filter_value: str = None):
     if not user_id:
         return {"error": "user_id required"}
-    return get_user_history(user_id)
+    return get_user_history(user_id, filter_by, filter_value)

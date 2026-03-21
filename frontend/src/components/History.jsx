@@ -32,19 +32,49 @@ const SENTIMENT_STYLES = {
 function History({ userId, onClose }) {
     const [history, setHistory] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [filterBy, setFilterBy] = useState("all");
+    const [filterValue, setFilterValue] = useState("");
+
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.toISOString().slice(0, 7);
+    const currentDay = today.toISOString().slice(0, 10);
+
+    const years = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+    const months = Array.from({ length: 12 }, (_, i) => {
+        const d = new Date(currentYear, i, 1);
+        return {
+            value: `${currentYear}-${String(i + 1).padStart(2, "0")}`,
+            label: d.toLocaleString("default", { month: "long" })
+        };
+    });
 
     useEffect(() => {
-        async function fetchHistory() {
-            try {
-                const res = await axios.get(`${API_URL}/history?user_id=${userId}`);
-                setHistory(res.data);
-            } catch (e) {
-                setHistory([]);
-            }
-            setLoading(false);
-        }
         fetchHistory();
-    }, [userId]);
+    }, [filterBy, filterValue]);
+
+    async function fetchHistory() {
+        setLoading(true);
+        try {
+            let url = `${API_URL}/history?user_id=${userId}`;
+            if (filterBy !== "all" && filterValue) {
+                url += `&filter_by=${filterBy}&filter_value=${filterValue}`;
+            }
+            const res = await axios.get(url);
+            setHistory(res.data);
+        } catch (e) {
+            setHistory([]);
+        }
+        setLoading(false);
+    }
+
+    const handleFilterChange = (type) => {
+        setFilterBy(type);
+        if (type === "day") setFilterValue(currentDay);
+        else if (type === "month") setFilterValue(currentMonth);
+        else if (type === "year") setFilterValue(String(currentYear));
+        else setFilterValue("");
+    };
 
     return (
         <div className="history-overlay">
@@ -58,10 +88,71 @@ function History({ userId, onClose }) {
                     </button>
                 </div>
 
-                {loading && <p className="history-empty">Loading...</p>}
+                <div className="history-filters">
+                    {["all", "day", "month", "year"].map((f) => (
+                        <button
+                            key={f}
+                            className={`filter-btn ${filterBy === f ? "active" : ""}`}
+                            onClick={() => handleFilterChange(f)}
+                        >
+                            {f.charAt(0).toUpperCase() + f.slice(1)}
+                        </button>
+                    ))}
+                </div>
+
+                {filterBy === "day" && (
+                    <div className="filter-select-row">
+                        <input
+                            type="date"
+                            value={filterValue}
+                            onChange={(e) => setFilterValue(e.target.value)}
+                            className="filter-date-input"
+                        />
+                    </div>
+                )}
+
+                {filterBy === "month" && (
+                    <div className="filter-select-row">
+                        <select
+                            value={filterValue}
+                            onChange={(e) => setFilterValue(e.target.value)}
+                            className="filter-date-input"
+                        >
+                            {months.map((m) => (
+                                <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                {filterBy === "year" && (
+                    <div className="filter-select-row">
+                        <select
+                            value={filterValue}
+                            onChange={(e) => setFilterValue(e.target.value)}
+                            className="filter-date-input"
+                        >
+                            {years.map((y) => (
+                                <option key={y} value={y}>{y}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="history-list">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="history-item">
+                                <div className="skeleton skeleton-label" style={{ width: "40%" }} />
+                                <div className="skeleton skeleton-value" style={{ width: "90%" }} />
+                                <div className="skeleton skeleton-small" style={{ width: "60%" }} />
+                            </div>
+                        ))}
+                    </div>
+                )}
 
                 {!loading && history.length === 0 && (
-                    <p className="history-empty">No history yet. Start analyzing some text!</p>
+                    <p className="history-empty">No history found for this period.</p>
                 )}
 
                 {!loading && history.length > 0 && (
@@ -70,7 +161,7 @@ function History({ userId, onClose }) {
                             const sentimentKey = item.prediction?.toUpperCase();
                             const sentimentStyle = SENTIMENT_STYLES[sentimentKey] || {};
                             return (
-                                <div key={index} className="history-item">
+                                <div key={index} className="history-item animate-in">
                                     <div className="history-item-top">
                                         <span className="history-lang">
                                             {LANGUAGE_NAMES[item.language] || item.language}

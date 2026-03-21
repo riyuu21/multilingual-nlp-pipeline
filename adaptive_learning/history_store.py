@@ -17,14 +17,28 @@ def save_history(user_id, text, language, translated_text, prediction, confidenc
 
         writer.writerow([datetime.now(), user_id, text, language, translated_text, prediction, confidence])
 
-def get_user_history(user_id):
+def get_user_history(user_id, filter_by=None, filter_value=None):
     try:
         rows = []
         with open(HISTORY_FILE, "r", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row["user_id"] == user_id:
-                    rows.append(row)
+                if row["user_id"] != user_id:
+                    continue
+
+                if filter_by and filter_value:
+                    try:
+                        ts = datetime.fromisoformat(row["timestamp"].split(".")[0])
+                        if filter_by == "day" and ts.strftime("%Y-%m-%d") != filter_value:
+                            continue
+                        if filter_by == "month" and ts.strftime("%Y-%m") != filter_value:
+                            continue
+                        if filter_by == "year" and ts.strftime("%Y") != filter_value:
+                            continue
+                    except:
+                        continue
+
+                rows.append(row)
         return list(reversed(rows))
     except:
         return []

@@ -1,0 +1,3 @@
+timestamp,user_id,text,language,translated_text,prediction,confidence
+2026-03-21 19:11:00.872896,,"tumko toh duniya samjha tha, tum toh duniya nikli",en,"tumko toh duniya samjha tha, tum toh duniya nikli",negative,0.3555389642715454
+2026-03-21 19:11:14.729059,,"tumko toh duniya samjha tha, tum toh duniya nikli",hinglish,"You understood this world, you turned out to be this world",neutral,0.5231347680091858

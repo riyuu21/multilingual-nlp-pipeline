@@ -1,7 +1,7 @@
 import { GoogleLogin } from '@react-oauth/google'
 import { jwtDecode } from 'jwt-decode'
 
-function Login({ onLogin }) {
+function Login({ onLogin, onSkip }) {
     const handleSuccess = (response) => {
         const user = jwtDecode(response.credential)
         onLogin({
@@ -22,10 +22,27 @@ function Login({ onLogin }) {
                     <h1>Multilingual NLP Analyzer</h1>
                 </div>
                 <p className="login-subtitle">Powered by AI — supports 60+ languages</p>
+
+                <div className="login-features">
+                    <div className="login-feature">
+                        <span>✓</span>
+                        <span>Free — 15 analyses per day</span>
+                    </div>
+                    <div className="login-feature">
+                        <span>✓</span>
+                        <span>Sign in for 100/day + history + adaptive learning</span>
+                    </div>
+                </div>
+
                 <GoogleLogin
                     onSuccess={handleSuccess}
                     onError={() => alert("Login failed, try again")}
                 />
+                {onSkip && (
+                    <button className="skip-btn" onClick={onSkip}>
+                        Continue as guest
+                    </button>
+                )}
             </div>
         </div>
     )

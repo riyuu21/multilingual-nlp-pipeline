@@ -1,6 +1,11 @@
 import pandas as pd
+from thefuzz import fuzz
 
 FEEDBACK_FILE = "adaptive_learning/feedback_data.csv"
+SIMILARITY_THRESHOLD = 80
+
+def is_similar(text1, text2):
+    return fuzz.ratio(text1.lower().strip(), text2.lower().strip()) >= SIMILARITY_THRESHOLD
 
 def get_user_feedback(user_id, feedback_type=None):
     try:
@@ -19,6 +24,12 @@ def get_user_corrections(user_id, feedback_type):
         return df[df["feedback"] == "negative"][["text", "prediction"]].values.tolist()
     except:
         return []
+
+def find_correction(text, corrections):
+    for corrected_text, wrong_prediction in corrections:
+        if is_similar(text, corrected_text):
+            return wrong_prediction
+    return None
 
 def feedback_summary(user_id=None):
     try:

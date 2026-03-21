@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-
+from adaptive_learning.history_store import save_history, get_user_history
 from routers.language_router import detect_language
 from routers.translation_router import translate_text
 from routers.model_router import classify_text
@@ -104,6 +104,7 @@ def analyze_text(request: TextRequest):
                 "prediction": label,
                 "confidence": score
             }
+            save_history(request.user_id, text, "hinglish", translated, label, score)
             add_to_cache(cache_key, result)
             return result
 
@@ -124,6 +125,7 @@ def analyze_text(request: TextRequest):
             "prediction": label,
             "confidence": score
         }
+        save_history(request.user_id, text, language, translated, label, score)
         add_to_cache(cache_key, result)
         return result
 
@@ -150,3 +152,8 @@ def submit_feedback(request: FeedbackRequest):
 @app.get("/feedback-summary")
 def get_feedback_summary(user_id: str = None):
     return feedback_summary(user_id)
+@app.get("/history")
+def get_history(user_id: str = None):
+    if not user_id:
+        return {"error": "user_id required"}
+    return get_user_history(user_id)

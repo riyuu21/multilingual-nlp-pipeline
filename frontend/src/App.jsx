@@ -4,8 +4,9 @@ import LanguageSelector from "./components/LanguageSelector";
 import TextInput from "./components/TextInput";
 import ResultCards from "./components/ResultCards";
 import Login from "./components/Login";
+import History from "./components/History";
 import "./App.css";
-
+import BuyMeCoffee from "./components/BuyMeCoffee";
 function App() {
     const [user, setUser] = useState(null);
     const [text, setText] = useState("");
@@ -13,7 +14,8 @@ function App() {
     const [targetLang, setTargetLang] = useState("en");
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const [showHistory, setShowHistory] = useState(false);
+    const [showBMC, setShowBMC] = useState(false);
     const handleAnalyze = async () => {
         if (!text.trim()) return;
         setLoading(true);
@@ -45,6 +47,15 @@ function App() {
                     <span>Multilingual NLP Analyzer</span>
                 </div>
                 <div className="header-right">
+                    <button className="bmc-btn" onClick={() => setShowBMC(true)}>
+                        ☕ Support
+                    </button>
+                    <button className="history-btn" onClick={() => setShowHistory(true)}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+                        </svg>
+                        History
+                    </button>
                     <img src={user.picture} alt={user.name} />
                     <span>{user.name}</span>
                     <button className="logout-btn" onClick={() => setUser(null)}>
@@ -71,6 +82,11 @@ function App() {
                 />
                 <ResultCards result={result} userId={user?.id} />
             </div>
+
+            {showHistory && (
+                <History userId={user.id} onClose={() => setShowHistory(false)} />
+            )}
+            {showBMC && <BuyMeCoffee onClose={() => setShowBMC(false)} />}
         </div>
     );
 }

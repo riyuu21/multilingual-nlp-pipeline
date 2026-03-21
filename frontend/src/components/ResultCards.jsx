@@ -29,27 +29,29 @@ const SENTIMENT_STYLES = {
     NEUTRAL: { background: "rgba(201, 150, 42, 0.15)", color: "#c9962a" },
 };
 
-function CopyButton({ text }) {
-    const [copied, setCopied] = useState(false);
+function ConfidenceBar({ value, color }) {
+    return (
+        <div className="confidence-bar-wrapper">
+            <div
+                className="confidence-bar"
+                style={{ width: `${(value * 100).toFixed(0)}%`, background: color || "var(--accent)" }}
+            />
+        </div>
+    );
+}
 
+function CopyButton({ text, onToast }) {
     const handleCopy = () => {
         navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        onToast("Copied to clipboard!", "success");
     };
 
     return (
         <button className="copy-btn" onClick={handleCopy}>
-            {copied ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-            ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-                </svg>
-            )}
-            {copied ? "Copied!" : "Copy"}
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+            </svg>
+            Copy
         </button>
     );
 }
@@ -77,10 +79,9 @@ function FeedbackButtons({ onPositive, onNegative, feedback }) {
     );
 }
 
-function ResultCards({ result, userId }) {
+function ResultCards({ result, userId, onToast }) {
     const [sentimentFeedback, setSentimentFeedback] = useState(null);
     const [languageFeedback, setLanguageFeedback] = useState(null);
-    const [visible, setVisible] = useState(false);
 
     if (!result) return null;
 
@@ -95,11 +96,13 @@ function ResultCards({ result, userId }) {
                 prediction,
                 feedback,
                 feedback_type: feedbackType,
-                user_id: userId
+                user_id: userId,
+                model_used: feedbackType === "sentiment" ? result.sentiment_model : result.translation_model
             });
             setter(feedback);
+            onToast("Feedback saved!", "success");
         } catch (e) {
-            alert("Could not save feedback");
+            onToast("Could not save feedback", "error");
         }
     };
 
@@ -116,6 +119,7 @@ function ResultCards({ result, userId }) {
                     <span>Detected Language</span>
                 </div>
                 <p className="card-value">{LANGUAGE_NAMES[result.language] || result.language}</p>
+                <ConfidenceBar value={result.language_confidence} color="var(--accent)" />
                 <small>{(result.language_confidence * 100).toFixed(1)}% confidence</small>
                 <FeedbackButtons
                     feedback={languageFeedback}
@@ -132,7 +136,7 @@ function ResultCards({ result, userId }) {
                     <span>Translation</span>
                 </div>
                 <p className="card-value">{result.translated_text}</p>
-                <CopyButton text={result.translated_text} />
+                <CopyButton text={result.translated_text} onToast={onToast} />
                 <FeedbackButtons
                     feedback={null}
                     onPositive={() => {}}
@@ -147,9 +151,8 @@ function ResultCards({ result, userId }) {
                     </svg>
                     <span>Sentiment</span>
                 </div>
-                <span className="badge" style={sentimentStyle}>
-                    {sentimentKey}
-                </span>
+                <span className="badge" style={sentimentStyle}>{sentimentKey}</span>
+                <ConfidenceBar value={result.confidence} color={sentimentStyle.color} />
                 <small>Score: {result.confidence?.toFixed(2)}</small>
                 <FeedbackButtons
                     feedback={sentimentFeedback}

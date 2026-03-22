@@ -4,13 +4,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_USER = os.getenv("DB_USER", "root")
-DB_PASSWORD = os.getenv("DB_PASSWORD", "your_password_here")
-DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "3306")
-DB_NAME = os.getenv("DB_NAME", "aethrix")
-
-DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+)
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 
@@ -31,7 +28,6 @@ def init_db():
                 model_used VARCHAR(50)
             )
         """))
-
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS history (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -44,7 +40,6 @@ def init_db():
                 confidence FLOAT
             )
         """))
-
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS model_scores (
                 id INT AUTO_INCREMENT PRIMARY KEY,
@@ -55,5 +50,4 @@ def init_db():
                 UNIQUE KEY unique_user_task_model (user_id, task, model_name)
             )
         """))
-
         conn.commit()

@@ -1,6 +1,9 @@
 import logging
 import time
+import re
+import os
 from collections import defaultdict
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -21,18 +24,33 @@ from adaptive_learning.model_scores import penalize_model
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-app = FastAPI()
+def warmup_models():
+    try:
+        logging.info("Warming up models...")
+        from routers.model_router import load_classifier
+        from routers.language_router import load_fasttext
+        load_fasttext()
+        load_classifier()
+        logging.info("Models warmed up successfully!")
+    except Exception as e:
+        logging.warning(f"Model warmup failed: {str(e)}")
 
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     init_db()
+    warmup_models()
+    yield
+
+app = FastAPI(lifespan=lifespan)
+
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 result_cache = {}
@@ -51,6 +69,13 @@ def is_rate_limited(user_id):
         return True
     rate_limit_store[key].append(now)
     return False
+
+def sanitize_input(text: str) -> str:
+    text = text.strip()
+    text = re.sub(r'<[^>]+>', '', text)
+    text = re.sub(r'[^\w\s.,!?\'\"()\-:;@#&+=%/\\]', '', text, flags=re.UNICODE)
+    text = re.sub(r'\s+', ' ', text)
+    return text[:500]
 
 def get_cache_key(text, source_lang, target_lang):
     return f"{text}|{source_lang}|{target_lang}"
@@ -86,7 +111,7 @@ def health():
 @app.post("/analyze")
 def analyze_text(request: TextRequest):
     try:
-        text = request.text.strip()
+        text = sanitize_input(request.text)
 
         if not text:
             return {"error": "Empty input"}
@@ -155,10 +180,13 @@ def analyze_text(request: TextRequest):
 @app.post("/feedback")
 def submit_feedback(request: FeedbackRequest):
     try:
+        if len(request.text) > 500:
+            return {"error": "Text too long"}
+        if len(request.prediction) > 50:
+            return {"error": "Invalid prediction"}
         if request.feedback not in ["positive", "negative"]:
             return {"error": "Invalid feedback type"}
-
-        if request.feedback_type not in ["sentiment", "language"]:
+        if request.feedback_type not in ["sentiment", "language", "translation"]:
             return {"error": "Invalid feedback type"}
 
         if request.feedback == "negative" and request.user_id and request.model_used:

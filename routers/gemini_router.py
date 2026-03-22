@@ -1,11 +1,10 @@
 import os
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def gemini_translate(text, source_lang, target_lang="en"):
     try:
@@ -14,7 +13,10 @@ If the text contains idioms, slang, or cultural expressions, translate the meani
 Return only the translated text, nothing else.
 
 Text: {text}"""
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         return response.text.strip()
     except:
         return None
@@ -24,7 +26,10 @@ def gemini_sentiment(text):
         prompt = f"""Analyze the sentiment of this text. Reply with only one word: POSITIVE, NEGATIVE, or NEUTRAL.
 
 Text: {text}"""
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
         result = response.text.strip().upper()
         if result in ["POSITIVE", "NEGATIVE", "NEUTRAL"]:
             return result, 0.85

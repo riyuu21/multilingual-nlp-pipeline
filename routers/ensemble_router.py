@@ -28,7 +28,7 @@ def ensemble_translate(text, source_lang, target_lang="en", user_id=None):
         results = {}
         for name, future in futures.items():
             try:
-                results[name] = future.result(timeout=10)
+                results[name] = future.result(timeout=20)
             except:
                 results[name] = None
 
@@ -56,7 +56,7 @@ def ensemble_sentiment(text, user_id=None):
         results = {}
         for name, future in futures.items():
             try:
-                result = future.result(timeout=10)
+                result = future.result(timeout=20)
                 if isinstance(result, tuple):
                     results[name] = result
                 else:

@@ -31,7 +31,7 @@ function InfoSidebar({ onClose }) {
                         <div className="manual-content">
                             <div className="manual-section">
                                 <h3>What is this app?</h3>
-                                <p>Multilingual NLP Analyzer is an AI powered tool that detects the language of any text, translates it to your chosen language, and analyzes its sentiment — all in one place.</p>
+                                <p>Aethrix is an AI powered tool that detects the language of any text, translates it to your chosen language, and analyzes its sentiment — all in one place.</p>
                             </div>
 
                             <div className="manual-section">

@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import defaultdict
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from database.db import init_db
 from routers.language_router import detect_language
 from routers.ensemble_router import ensemble_translate, ensemble_sentiment
 from preprocessing.text_preprocess import preprocess_text
@@ -21,6 +22,10 @@ from adaptive_learning.model_scores import penalize_model
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 app = FastAPI()
+
+@app.on_event("startup")
+def startup():
+    init_db()
 
 app.add_middleware(
     CORSMiddleware,
@@ -72,7 +77,7 @@ class FeedbackRequest(BaseModel):
 
 @app.get("/")
 def home():
-    return {"message": "NLP API is running"}
+    return {"message": "Aethrix API is running"}
 
 @app.get("/health")
 def health():

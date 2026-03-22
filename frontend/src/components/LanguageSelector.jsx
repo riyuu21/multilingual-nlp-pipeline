@@ -74,22 +74,29 @@ const TARGET_LANGUAGES = SOURCE_LANGUAGES.filter(l => l.value !== "" && l.value 
 
 function LanguageSelector({ sourceLang, targetLang, setSourceLang, setTargetLang }) {
     return (
-        <div className="select-row">
-            <SearchableSelect
-                value={sourceLang}
-                onChange={setSourceLang}
-                options={SOURCE_LANGUAGES}
-                placeholder="Auto Detect"
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted-text)", flexShrink: 0 }}>
-                <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
-            </svg>
-            <SearchableSelect
-                value={targetLang}
-                onChange={setTargetLang}
-                options={TARGET_LANGUAGES}
-                placeholder="Target Language"
-            />
+        <div>
+            <div className="select-row">
+                <SearchableSelect
+                    value={sourceLang}
+                    onChange={setSourceLang}
+                    options={SOURCE_LANGUAGES}
+                    placeholder="Auto Detect"
+                />
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted-text)", flexShrink: 0 }}>
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                </svg>
+                <SearchableSelect
+                    value={targetLang}
+                    onChange={setTargetLang}
+                    options={TARGET_LANGUAGES}
+                    placeholder="Target Language"
+                />
+            </div>
+            {!sourceLang && (
+                <p className="lang-hint">
+                    Typing Hinglish? Select <span onClick={() => setSourceLang("hinglish")} className="lang-hint-link">Hinglish</span> as source language for best results.
+                </p>
+            )}
         </div>
     );
 }

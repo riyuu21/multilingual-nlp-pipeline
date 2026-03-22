@@ -1,6 +1,11 @@
+import os
 from deep_translator import GoogleTranslator
-from indic_transliteration import sanscript
-from indic_transliteration.sanscript import transliterate
+from dotenv import load_dotenv
+from google import genai
+
+load_dotenv()
+
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # ============================================================
 # WHAT CAN WE IMPROVE?
@@ -11,9 +16,7 @@ from indic_transliteration.sanscript import transliterate
 #    and "tomorrow" depending on context, we always map to "kal"
 # 3. Sarcasm and idioms are not handled — "kya baat hai" can
 #    mean both "what's the matter" and "wow amazing"
-# 4. The indic_transliteration library uses ITRANS scheme which
-#    doesn't always match how people actually type Hinglish
-# 5. Adding a proper Hinglish NLP model would fix most of these
+# 4. Adding a proper Hinglish NLP model would fix most of these
 # ============================================================
 
 HINGLISH_MAP = {
@@ -84,31 +87,30 @@ HINGLISH_MAP = {
     # Common nouns
     "yaar": "yaar", "bhai": "bhai", "dost": "dost", "dosth": "dost",
     "behen": "bahan", "bahan": "bahan", "mama": "mama", "chacha": "chacha",
-    "ghar": "ghar", "घर": "ghar", "school": "vidyalay",
-    "kaam": "kaam", "kaam": "kaam", "naukri": "naukri",
+    "ghar": "ghar", "kaam": "kaam", "naukri": "naukri",
     "paise": "paise", "paisa": "paisa", "rupaye": "rupaye",
     "khana": "khana", "khaana": "khana", "pani": "pani",
-    "chai": "chai", "chaay": "chai", "coffee": "coffee",
+    "chai": "chai", "chaay": "chai",
     "raat": "raat", "din": "din", "subah": "subah", "shaam": "shaam",
     "kal": "kal", "aaj": "aaj", "parso": "parso",
     "abhi": "abhi", "baad": "baad", "pehle": "pehle",
-    "time": "samay", "waqt": "waqt", "ghanta": "ghanta",
+    "waqt": "waqt", "ghanta": "ghanta",
     "dil": "dil", "mann": "man", "dimag": "dimaag",
     "zindagi": "zindagi", "duniya": "duniya",
     "pyaar": "pyar", "mohabbat": "mohabbat", "ishq": "ishq",
     "gussa": "gussa", "khushi": "khushi", "dukh": "dukh",
-    "darr": "dar", "dar": "dar", "sharam": "sharam",
+    "darr": "dar", "sharam": "sharam",
 
     # Common expressions
     "nahi": "nahin", "nhi": "nahin", "na": "nahin", "naa": "nahin",
     "haan": "haan", "han": "haan", "ha": "haan",
     "bilkul": "bilkul", "zaroor": "zaroor", "matlab": "matlab",
-    "ummeed": "umeed", "umeed": "umeed", "shayad": "shayad",
+    "umeed": "umeed", "shayad": "shayad",
     "pata": "pata", "pta": "pata", "maloom": "maloom",
     "bahut": "bahut", "bohot": "bahut", "bohat": "bahut", "bhaut": "bahut",
     "thoda": "thoda", "thodi": "thodi", "kam": "kam", "zyada": "zyada",
     "sirf": "sirf", "bas": "bas", "hi": "hi", "bhi": "bhi",
-    "toh": "toh", "to": "toh", "par": "par", "lekin": "lekin",
+    "toh": "toh", "par": "par", "lekin": "lekin",
     "kyunki": "kyunki", "kyuki": "kyunki", "isliye": "isliye",
     "phir": "phir", "fir": "phir", "dobara": "dobara",
     "agar": "agar", "jab": "jab", "tab": "tab", "jaise": "jaise",
@@ -117,33 +119,35 @@ HINGLISH_MAP = {
     "shukriya": "shukriya", "dhanyawad": "dhanyawad",
     "namaste": "namaste", "namaskar": "namaskar",
     "alvida": "alvida", "bye": "alvida",
-    "kyu": "kyun", "kyun": "kyun", "kyunki": "kyunki",
+    "kyu": "kyun", "kyun": "kyun",
     "kaisa": "kaisa", "kaisi": "kaisi",
     "kitna": "kitna", "kitni": "kitni", "kitne": "kitne",
-    "kahan": "kahan", "kha": "kahan", "kidhar": "kidhar",
-    "kab": "kab", "kaise": "kaise", "kyun": "kyun",
+    "kahan": "kahan", "kidhar": "kidhar", "kab": "kab",
 }
 
 def normalize_hinglish(text):
     words = text.lower().split()
     return " ".join([HINGLISH_MAP.get(w, w) for w in words])
 
-def to_devanagari(text):
-    try:
-        return transliterate(text, sanscript.ITRANS, sanscript.DEVANAGARI)
-    except:
-        return text
-
 def hinglish_to_english(text):
     try:
-        normalized = normalize_hinglish(text)
-        devanagari = to_devanagari(normalized)
-        result = GoogleTranslator(source='hi', target='en').translate(devanagari)
-        if not result or result.strip() == "":
-            return GoogleTranslator(source='auto', target='en').translate(normalized)
-        return result
+        prompt = f"""Translate this Hinglish text (Hindi written in Roman/English script) to natural English.
+Understand idioms, slang and casual expressions naturally.
+Return only the English translation, nothing else.
+
+Hinglish text: {text}"""
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
+        result = response.text.strip()
+        if result:
+            return result
     except:
-        try:
-            return GoogleTranslator(source='auto', target='en').translate(text)
-        except:
-            return text
+        pass
+
+    try:
+        normalized = normalize_hinglish(text)
+        return GoogleTranslator(source='auto', target='en').translate(normalized)
+    except:
+        return text

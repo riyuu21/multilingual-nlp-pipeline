@@ -7,7 +7,7 @@ export async function analyzeText(text, sourceLang, targetLang, userId) {
     if (sourceLang) payload.source_lang = sourceLang;
     
     try {
-        const res = await axios.post(`${API_URL}/analyze`, payload, { timeout: 15000 });
+        const res = await axios.post(`${API_URL}/analyze`, payload, { timeout: 30000 });
         return res.data;
     } catch (error) {
         if (!error.response) {

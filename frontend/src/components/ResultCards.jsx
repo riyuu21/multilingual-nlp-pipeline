@@ -82,6 +82,7 @@ function FeedbackButtons({ onPositive, onNegative, feedback }) {
 function ResultCards({ result, userId, onToast }) {
     const [sentimentFeedback, setSentimentFeedback] = useState(null);
     const [languageFeedback, setLanguageFeedback] = useState(null);
+    const [translationFeedback, setTranslationFeedback] = useState(null);
 
     if (!result) return null;
 
@@ -138,9 +139,9 @@ function ResultCards({ result, userId, onToast }) {
                 <p className="card-value">{result.translated_text}</p>
                 <CopyButton text={result.translated_text} onToast={onToast} />
                 <FeedbackButtons
-                    feedback={null}
-                    onPositive={() => {}}
-                    onNegative={() => {}}
+                    feedback={translationFeedback}
+                    onPositive={() => sendFeedback("translation", result.translated_text, "positive", setTranslationFeedback)}
+                    onNegative={() => sendFeedback("translation", result.translated_text, "negative", setTranslationFeedback)}
                 />
             </div>
 

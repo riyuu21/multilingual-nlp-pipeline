@@ -1,49 +1,36 @@
-import json
-import os
-
-SCORES_FILE = "adaptive_learning/model_scores.json"
+from sqlalchemy import text
+from database.db import get_connection
 
 DEFAULT_SCORES = {
-    "translation": {
-        "marian": 1.0,
-        "gemini": 1.0,
-        "groq": 1.0
-    },
-    "sentiment": {
-        "xlm_roberta": 1.0,
-        "gemini": 1.0,
-        "groq": 1.0
-    }
+    "translation": {"marian": 1.0, "gemini": 1.0, "groq": 1.0},
+    "sentiment": {"xlm_roberta": 1.0, "gemini": 1.0, "groq": 1.0}
 }
 
-def load_scores(user_id):
+def get_model_priority(user_id, task):
     try:
-        with open(SCORES_FILE, "r") as f:
-            all_scores = json.load(f)
-        return all_scores.get(user_id, DEFAULT_SCORES.copy())
+        with get_connection() as conn:
+            result = conn.execute(text("""
+                SELECT model_name, score FROM model_scores
+                WHERE user_id = :user_id AND task = :task
+            """), {"user_id": user_id, "task": task})
+            rows = result.fetchall()
+            if not rows:
+                return list(DEFAULT_SCORES[task].items())
+            scores = {row[0]: row[1] for row in rows}
+            defaults = DEFAULT_SCORES[task].copy()
+            defaults.update(scores)
+            return sorted(defaults.items(), key=lambda x: x[1], reverse=True)
     except:
-        return DEFAULT_SCORES.copy()
-
-def save_scores(user_id, scores):
-    os.makedirs("adaptive_learning", exist_ok=True)
-    try:
-        try:
-            with open(SCORES_FILE, "r") as f:
-                all_scores = json.load(f)
-        except:
-            all_scores = {}
-        all_scores[user_id] = scores
-        with open(SCORES_FILE, "w") as f:
-            json.dump(all_scores, f, indent=2)
-    except:
-        pass
+        return list(DEFAULT_SCORES[task].items())
 
 def penalize_model(user_id, task, model_name):
-    scores = load_scores(user_id)
-    if model_name in scores[task]:
-        scores[task][model_name] = max(0.1, scores[task][model_name] - 0.2)
-    save_scores(user_id, scores)
-
-def get_model_priority(user_id, task):
-    scores = load_scores(user_id)
-    return sorted(scores[task].items(), key=lambda x: x[1], reverse=True)
+    try:
+        with get_connection() as conn:
+            conn.execute(text("""
+                INSERT INTO model_scores (user_id, task, model_name, score)
+                VALUES (:user_id, :task, :model_name, 0.8)
+                ON DUPLICATE KEY UPDATE score = GREATEST(0.1, score - 0.2)
+            """), {"user_id": user_id, "task": task, "model_name": model_name})
+            conn.commit()
+    except:
+        pass

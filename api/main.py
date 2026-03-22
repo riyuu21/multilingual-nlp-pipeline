@@ -28,8 +28,8 @@ def warmup_models():
     try:
         logging.info("Warming up models...")
         from routers.model_router import load_classifier
-        from routers.language_router import load_fasttext
-        load_fasttext()
+        from routers.language_router import load_custom_detector
+        load_custom_detector()
         load_classifier()
         logging.info("Models warmed up successfully!")
     except Exception as e:
@@ -47,10 +47,10 @@ ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 result_cache = {}
